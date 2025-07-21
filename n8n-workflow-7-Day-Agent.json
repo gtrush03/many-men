@@ -1,0 +1,462 @@
+{
+  "name": "Lead Onboarding Workflow - 7 Day Funnel",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "7-day-funnel",
+        "responseMode": "onReceived",
+        "responseData": "allEntries",
+        "options": {}
+      },
+      "id": "webhook-7day",
+      "name": "New Lead: 7-Day Funnel Form",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        460,
+        -400
+      ],
+      "webhookId": "7-day-funnel"
+    },
+    {
+      "parameters": {
+        "amount": 7,
+        "unit": "minutes"
+      },
+      "id": "wait-7min",
+      "name": "Wait: 7 Minutes",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        460,
+        -260
+      ],
+      "webhookId": "8b63c2e5-4b1f-4b2f-9c5f-3d4e5f6a7b8c"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.calendly.com/scheduled_events",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "invitee_email",
+              "value": "={{ $json.body.email }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-calendly",
+      "name": "Check: Calendly Booking",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        460,
+        -120
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "calendlyApi",
+          "name": "Calendly API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition1",
+              "leftValue": "={{ $json.collection.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-booked",
+      "name": "Condition: Was Call Booked?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        460,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.vapi.ai/call/phone",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"phoneNumberId\": \"your-vapi-phone-number-id\",\n  \"assistantId\": \"john-vapi-assistant-id\",\n  \"customer\": {\n    \"number\": \"{{ $('webhook-7day').item.json.body.phone }}\"\n  }\n}",
+        "options": {}
+      },
+      "id": "http-john-vapi",
+      "name": "Action: John VAPI Call",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        200,
+        160
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "vapiApi",
+          "name": "VAPI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "your-telegram-chat-id",
+        "text": "=Meeting Confirmed! A new strategy call has been booked with {{ $('webhook-7day').item.json.body.name }}.",
+        "additionalFields": {}
+      },
+      "id": "telegram-confirm",
+      "name": "Action: Send Telegram Message",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        160
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "telegramApi",
+          "name": "Telegram API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('webhook-7day').item.json.body.email }}",
+        "subject": "Welcome to TRU SYNTH!",
+        "message": "<h1>Hi {{ $('webhook-7day').item.json.body.name }},</h1><p>Thank you for booking a call. We're excited to speak with you.</p>",
+        "options": {
+          "attachmentsUi": {}
+        }
+      },
+      "id": "gmail-welcome",
+      "name": "Action: Send Welcome Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        720,
+        300
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gmailApi",
+          "name": "Gmail API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 2,
+        "unit": "hours"
+      },
+      "id": "wait-2hours",
+      "name": "Wait: 2 Hours",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        440
+      ],
+      "webhookId": "3c7d8e9f-5a2b-4c3d-ae4f-6b7c8d9e0f1a"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.vapi.ai/call/phone",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"phoneNumberId\": \"your-vapi-phone-number-id\",\n  \"assistantId\": \"kim-vapi-assistant-id\",\n  \"customer\": {\n    \"number\": \"{{ $('webhook-7day').item.json.body.phone }}\"\n  }\n}",
+        "options": {}
+      },
+      "id": "http-kim-vapi",
+      "name": "Action: Kim VAPI Call",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        720,
+        580
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "vapiApi",
+          "name": "VAPI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## LEAD ONBOARDING WORKFLOW\n\nThis workflow handles new leads from the 7-day funnel form",
+        "height": 80,
+        "width": 250
+      },
+      "id": "note-main",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        360,
+        -500
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## JOHN VAPI HANDLING\n\nHandles calls for leads who haven't booked",
+        "height": 80,
+        "width": 200
+      },
+      "id": "note-john",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        100,
+        60
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## KIM VAPI HANDLING\n\nFollow-up calls for booked leads",
+        "height": 80,
+        "width": 200
+      },
+      "id": "note-kim",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        620,
+        60
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://YOUR_SUPABASE_URL.supabase.co/rest/v1/calls",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"lead_email\": \"{{ $('webhook-7day').item.json.body.email }}\",\n  \"lead_name\": \"{{ $('webhook-7day').item.json.body.name }}\",\n  \"call_type\": \"john_vapi\",\n  \"call_output\": {{ JSON.stringify($json) }}\n}",
+        "options": {}
+      },
+      "id": "http-supabase-john",
+      "name": "Action: Update Supabase Record",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        200,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "supabaseApi",
+          "name": "Supabase API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://YOUR_SUPABASE_URL.supabase.co/rest/v1/calls",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"lead_email\": \"{{ $('webhook-7day').item.json.body.email }}\",\n  \"lead_name\": \"{{ $('webhook-7day').item.json.body.name }}\",\n  \"call_type\": \"kim_vapi\",\n  \"call_output\": {{ JSON.stringify($json) }}\n}",
+        "options": {}
+      },
+      "id": "http-supabase-kim",
+      "name": "Action: Save Call Summary to Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        720,
+        720
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "supabaseApi",
+          "name": "Supabase API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "your-internal-telegram-chat-id",
+        "text": "=Kim VAPI Call Summary:\nLead: {{ $('webhook-7day').item.json.body.name }}\nEmail: {{ $('webhook-7day').item.json.body.email }}\nPhone: {{ $('webhook-7day').item.json.body.phone }}",
+        "additionalFields": {}
+      },
+      "id": "telegram-notify",
+      "name": "Action: Send Telegram Notification",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        860
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "telegramApi",
+          "name": "Telegram API"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "New Lead: 7-Day Funnel Form": {
+      "main": [
+        [
+          {
+            "node": "Wait: 7 Minutes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait: 7 Minutes": {
+      "main": [
+        [
+          {
+            "node": "Check: Calendly Booking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check: Calendly Booking": {
+      "main": [
+        [
+          {
+            "node": "Condition: Was Call Booked?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Condition: Was Call Booked?": {
+      "main": [
+        [
+          {
+            "node": "Action: John VAPI Call",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Action: Send Telegram Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Action: John VAPI Call": {
+      "main": [
+        [
+          {
+            "node": "Action: Update Supabase Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Action: Send Telegram Message": {
+      "main": [
+        [
+          {
+            "node": "Action: Send Welcome Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Action: Send Welcome Email": {
+      "main": [
+        [
+          {
+            "node": "Wait: 2 Hours",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait: 2 Hours": {
+      "main": [
+        [
+          {
+            "node": "Action: Kim VAPI Call",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Action: Kim VAPI Call": {
+      "main": [
+        [
+          {
+            "node": "Action: Save Call Summary to Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Action: Save Call Summary to Supabase": {
+      "main": [
+        [
+          {
+            "node": "Action: Send Telegram Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "01234567-89ab-cdef-0123-456789abcdef",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8c8c5237b8e37b006a7adce87f4369350c58e41f3ca9de16196d3197f69eabcd"
+  },
+  "id": "workflow-7day-funnel",
+  "tags": []
+}
